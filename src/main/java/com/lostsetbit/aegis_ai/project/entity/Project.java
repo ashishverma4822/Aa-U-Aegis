@@ -1,5 +1,6 @@
 package com.lostsetbit.aegis_ai.project.entity;
 
+import com.lostsetbit.aegis_ai.auth.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;

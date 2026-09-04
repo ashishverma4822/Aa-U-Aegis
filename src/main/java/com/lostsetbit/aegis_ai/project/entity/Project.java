@@ -2,11 +2,11 @@ package com.lostsetbit.aegis_ai.project.entity;
 
 import com.lostsetbit.aegis_ai.auth.entity.User;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "projects")
@@ -18,25 +18,23 @@ import java.time.LocalDateTime;
 public class Project {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @NotBlank
     @Column(nullable = false)
     private String name;
 
     private String description;
 
-    @NotBlank
-    @Column(name = "api_key", nullable = false, unique = true)
+    @Column(nullable = false, unique = true, updatable = false)
     private String apiKey;
 
-    @Enumerated(EnumType.STRING)
-    private ProjectStatus status;
+    @Column(nullable = false)
+    private String apiSecretHash;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

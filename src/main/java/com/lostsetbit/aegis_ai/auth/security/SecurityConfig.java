@@ -30,8 +30,9 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/health").permitAll()
-                        .requestMatchers("/api/projects/**").authenticated() // Require JWT auth for projects
+                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/health", "/error").permitAll()
+                        .requestMatchers("/api/projects/**").authenticated()
+                        .requestMatchers("/api/rate-limits/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

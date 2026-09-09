@@ -16,5 +16,7 @@ public interface RateLimitRuleRepository extends JpaRepository<RateLimitRule, Lo
 
     boolean existsByProjectIdAndEndpointAndLimitType(UUID projectId, String endpoint, LimitType limitType);
 
+    Optional<RateLimitRule> findByProjectIdAndEndpoint(UUID projectId, String endpoint);
+
     Optional<RateLimitRule> findByIdAndProjectUserId(Long id, Long userId);
 }

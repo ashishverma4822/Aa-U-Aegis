@@ -9,16 +9,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class FixedWindowRateLimiter implements RateLimiter {
+public class TokenBucketRateLimiter implements RateLimiter {
 
     private final RedisRateLimitRepository redisRepository;
 
     @Override
     public RateLimitAlgorithm getSupportedAlgorithm() {
-        return RateLimitAlgorithm.FIXED_WINDOW;
+        return RateLimitAlgorithm.TOKEN_BUCKET;
     }
 
     @Override
@@ -26,25 +27,33 @@ public class FixedWindowRateLimiter implements RateLimiter {
         RateLimitRule rule = context.getRule();
         String resolvedClientId = resolveClientIdentifier(rule, context.getProjectApiKey(), context.getClientIdentifier());
 
+        long capacity = rule.getRequestLimit();
         long timeWindow = rule.getTimeWindow();
-        long currentEpochSeconds = Instant.now().getEpochSecond();
-        long window = currentEpochSeconds / timeWindow;
+        long nowEpochSeconds = Instant.now().getEpochSecond();
+        long ttlSeconds = timeWindow * 2;
 
-        String redisKey = String.format("rate_limit:%s:%s:%s:%s:%d",
+        String redisKey = String.format("rate_limit:token_bucket:%s:%s:%s:%s",
                 context.getProjectApiKey(),
                 rule.getEndpoint(),
                 rule.getLimitType().name(),
-                resolvedClientId,
-                window
+                resolvedClientId
         );
 
-        long currentCount = redisRepository.incrementAndGetFixedWindow(redisKey, timeWindow);
-        long limit = rule.getRequestLimit();
+        List<Long> evalResult = redisRepository.executeTokenBucket(
+                redisKey,
+                capacity,
+                timeWindow,
+                nowEpochSeconds,
+                ttlSeconds
+        );
 
-        if (currentCount > limit) {
+        boolean allowed = evalResult.get(0) == 1L;
+        long remainingTokens = evalResult.get(1);
+
+        if (!allowed) {
             return RateLimitResult.builder()
                     .allowed(false)
-                    .limit(limit)
+                    .limit(capacity)
                     .remaining(0)
                     .message("Rate limit exceeded")
                     .build();
@@ -52,8 +61,8 @@ public class FixedWindowRateLimiter implements RateLimiter {
 
         return RateLimitResult.builder()
                 .allowed(true)
-                .limit(limit)
-                .remaining(limit - currentCount)
+                .limit(capacity)
+                .remaining(remainingTokens)
                 .message("Request allowed")
                 .build();
     }

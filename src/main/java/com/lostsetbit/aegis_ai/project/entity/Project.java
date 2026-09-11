@@ -32,6 +32,10 @@ public class Project {
     @Column(nullable = false)
     private String apiSecretHash;
 
+    @Builder.Default
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
